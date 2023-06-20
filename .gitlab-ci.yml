@@ -1,0 +1,28 @@
+stages:
+  - build
+  - trigger
+
+build-job:
+  stage: build
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+    - docker info
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker push $CI_REGISTRY_IMAGE
+    - echo "Done :)"
+
+trigger-job:
+  image: curlimages/curl
+  stage: trigger
+  variables:
+    NAMESPACE: "katulistiwa"
+    APP_NAME: "katulistiwa"
+    APP_TYPE: "node"
+    DEPLOYMENT_REPLICAS: 1
+    CONTAINER_PORT: 80
+    HTTP_ROOT_PATH: "/"
+    DOMAINS: "katulistiwa.io www.katulistiwa.io"
+  script:
+    - 'curl -s -X POST --fail --form token=$CI_JOB_TOKEN --form ref=main --form "variables[NAMESPACE]=$NAMESPACE" --form "variables[APP_NAME]=$APP_NAME" --form "variables[APP_TYPE]=$APP_TYPE" --form "variables[REGISTRY_IMAGE]=$CI_PROJECT_PATH" --form "variables[DEPLOYMENT_REPLICAS]=$DEPLOYMENT_REPLICAS" --form "variables[CONTAINER_PORT]=$CONTAINER_PORT" --form "variables[HTTP_ROOT_PATH]=$HTTP_ROOT_PATH" --form "variables[DOMAINS]=$DOMAINS" "$CI_API_V4_URL/projects/10/trigger/pipeline" -o /tmp/tmp'
+    - echo "Done :)"
