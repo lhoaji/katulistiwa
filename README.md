@@ -1,0 +1,2 @@
+# katulistiwa
+bantuin guh wkwkwkkw
